@@ -28,6 +28,16 @@ class StudentDatabase:
             "VALUES (?, ?, ?, ?, ?)", (name, contact, email, rollno, branch)
         )
         self.conn.commit()
+        
+    def record_exists(self, name, contact, email, rollno, branch):
+        self.cursor.execute(
+            """SELECT 1 FROM STUD_REGISTRATION
+               WHERE STU_NAME = ? AND STU_CONTACT = ?
+               AND STU_EMAIL = ? AND STU_ROLLNO = ?
+               AND STU_BRANCH = ?""",
+            (name, contact, email, rollno, branch)
+        )
+        return self.cursor.fetchone() is not None
 
     def delete(self, stu_id):
         self.cursor.execute("DELETE FROM STUD_REGISTRATION WHERE STU_ID = ?", (stu_id,))
@@ -253,15 +263,28 @@ class StudentApp:
         file_name = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
         if not file_name:
             return
+
+        imported = 0
+        skipped = 0
+
         with open(file_name, 'r') as file:
             reader = csv.reader(file)
-            next(reader)  # Skip header
+            next(reader, None)
+
             for row in reader:
                 if len(row) == 6:
-                    self.db.insert(row[1], row[2], row[3], row[4], row[5])
-        tkMessageBox.showinfo("Success", "Data imported from CSV successfully")
-        self.display_data()
+                    if not self.db.record_exists(row[1], row[2], row[3], row[4], row[5]):
+                        self.db.insert(row[1], row[2], row[3], row[4], row[5])
+                        imported += 1
+                    else:
+                        skipped += 1
 
+        tkMessageBox.showinfo(
+            "Import Complete",
+            f"{imported} records imported.\n{skipped} duplicate records skipped."
+        )
+        self.display_data()
+        
     def clear_all_data(self):
         self.db.clear_all()
         tkMessageBox.showinfo("Success", "All data cleared")

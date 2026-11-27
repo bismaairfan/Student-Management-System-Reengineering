@@ -81,7 +81,7 @@ class StudentApp:
     def __init__(self, root):
         self.root = root
         self.root.geometry("1200x700")
-        self.root.title("Student Management System")
+        self.root.title("Student Management System - Reengineered") 
         self.db = StudentDatabase()
         self.setup_ui()
 
